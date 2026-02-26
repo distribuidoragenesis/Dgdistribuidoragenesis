@@ -700,18 +700,18 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
     <div class="form-group"><label>Stock *</label><input type="number" id="fStock" placeholder="0" min="0"></div>
     <!-- Precios especiales por tipo -->
     <div style="background:var(--orange-soft);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);padding:1.2rem;margin-bottom:1.2rem">
-      <div style="font-size:0.9rem;font-weight:800;color:#92400e;margin-bottom:0.8rem">🏪 Precios Mayoristas</div>
+      <div style="font-size:0.9rem;font-weight:800;color:#92400e;margin-bottom:0.8rem">🏪 Mayoristas</div>
       <div style="font-size:0.8rem;color:#92400e;margin-bottom:1rem">Puedes ingresar: precio directo (ej: 5.50) · porcentaje de descuento (ej: 10%) · o resta fija (ej: -2)</div>
       <div style="margin-bottom:0.8rem">
-        <label style="font-size:0.85rem;font-weight:700;color:#92400e;display:block;margin-bottom:0.4rem">Precio Mayoristas</label>
-        <input type="text" id="fPrecioMayoristas" placeholder="5.50 o 10% o -2" oninput="previewPrecios()" style="width:100%;padding:0.7rem;border:1px solid rgba(245,158,11,0.4);border-radius:6px;font-size:0.95rem;background:#fff;font-weight:600">
+        <label style="font-size:0.85rem;font-weight:700;color:#92400e;display:block;margin-bottom:0.4rem">½ DOC</label>
+        <input type="text" id="fPrecioMediaDoc" placeholder="5.50 o 10% o -2" oninput="previewPrecios()" style="width:100%;padding:0.7rem;border:1px solid rgba(245,158,11,0.4);border-radius:6px;font-size:0.95rem;background:#fff;font-weight:600">
       </div>
       <div style="margin-bottom:0.8rem">
-        <label style="font-size:0.85rem;font-weight:700;color:#92400e;display:block;margin-bottom:0.4rem">📦 Precio DOC (docena)</label>
+        <label style="font-size:0.85rem;font-weight:700;color:#92400e;display:block;margin-bottom:0.4rem">DOC</label>
         <input type="text" id="fPrecioDoc" placeholder="5.50 o 10% o -2" oninput="previewPrecios()" style="width:100%;padding:0.7rem;border:1px solid rgba(245,158,11,0.4);border-radius:6px;font-size:0.95rem;background:#fff;font-weight:600">
       </div>
       <div style="margin-bottom:0.8rem">
-        <label style="font-size:0.85rem;font-weight:700;color:#92400e;display:block;margin-bottom:0.4rem">🎁 Precio FARDO</label>
+        <label style="font-size:0.85rem;font-weight:700;color:#92400e;display:block;margin-bottom:0.4rem">FARDO</label>
         <input type="text" id="fPrecioFardo" placeholder="5.50 o 10% o -2" oninput="previewPrecios()" style="width:100%;padding:0.7rem;border:1px solid rgba(245,158,11,0.4);border-radius:6px;font-size:0.95rem;background:#fff;font-weight:600">
       </div>
       <div id="precioPreview" style="margin-top:0.8rem;font-size:0.85rem;color:#92400e;font-weight:600"></div>
@@ -1262,7 +1262,7 @@ function saveInventoryUpdate(){
 }
 function openAddModal(){
   editingId=null; document.getElementById("modalTitle").textContent="Agregar Producto";
-  ["fSku","fName","fDesc","fPrice","fStock","fImgUrl","fImgData","fPrecioMayoristas","fPrecioDoc","fPrecioFardo"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  ["fSku","fName","fDesc","fPrice","fStock","fImgUrl","fImgData","fPrecioMayoristas","fPrecioMediaDoc","fPrecioDoc","fPrecioFardo"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
   document.getElementById("imgPreview").style.display="none";
   document.getElementById("precioPreview").textContent="";
   document.getElementById("modalOverlay").classList.add("open");
@@ -1276,6 +1276,7 @@ function openEditModal(id){
   document.getElementById("fImgData").value=p.img||"";
   // Cargar precio mayoristas si existe
   document.getElementById("fPrecioMayoristas").value=(p.precio_mayoristas||p.precio_uds)>0?(p.precio_mayoristas||p.precio_uds):"";
+  document.getElementById("fPrecioMediaDoc").value=p.precio_media_doc>0?p.precio_media_doc:"";
   document.getElementById("fPrecioDoc").value=p.precio_doc>0?p.precio_doc:"";
   document.getElementById("fPrecioFardo").value=p.precio_fardo>0?p.precio_fardo:"";
   const prev=document.getElementById("imgPreview");
@@ -1304,13 +1305,13 @@ function parsePrecioInput(val, precioBase){
 function previewPrecios(){
   const base=parseFloat(document.getElementById("fPrice").value)||0;
   if(!base){document.getElementById("precioPreview").textContent="";return;}
-  const m=parsePrecioInput(document.getElementById("fPrecioMayoristas").value,base);
+  const md=parsePrecioInput(document.getElementById("fPrecioMediaDoc").value,base);
   const d=parsePrecioInput(document.getElementById("fPrecioDoc").value,base);
   const f=parsePrecioInput(document.getElementById("fPrecioFardo").value,base);
   let prev="";
-  if(m>0) prev+="🏪 Mayoristas: Q"+m.toFixed(2)+"  ";
-  if(d>0) prev+="📦 DOC: Q"+d.toFixed(2)+"  ";
-  if(f>0) prev+="🎁 FARDO: Q"+f.toFixed(2);
+  if(md>0) prev+="½ DOC: Q"+md.toFixed(2)+"  ";
+  if(d>0) prev+="DOC: Q"+d.toFixed(2)+"  ";
+  if(f>0) prev+="FARDO: Q"+f.toFixed(2);
   document.getElementById("precioPreview").textContent=prev;
 }
 function saveProduct(){
@@ -1320,9 +1321,10 @@ function saveProduct(){
   const img=document.getElementById("fImgData").value;
   if(!name||isNaN(price)){toast("Nombre y precio requeridos","error");return;}
   const precio_mayoristas=parsePrecioInput(document.getElementById("fPrecioMayoristas").value,price);
+  const precio_media_doc=parsePrecioInput(document.getElementById("fPrecioMediaDoc").value,price);
   const precio_doc=parsePrecioInput(document.getElementById("fPrecioDoc").value,price);
   const precio_fardo=parsePrecioInput(document.getElementById("fPrecioFardo").value,price);
-  const extras={precio_mayoristas,precio_doc,precio_fardo};
+  const extras={precio_mayoristas,precio_media_doc,precio_doc,precio_fardo};
   if(editingId){const p=products.find(x=>x.id===editingId);if(p)Object.assign(p,{sku,name,desc,price,stock:isNaN(stock)?p.stock:stock,img,imgUrl,...extras});toast("Actualizado","success");}
   else{products.push({id:nextId(),sku,name,desc,price,stock:isNaN(stock)?0:stock,img,imgUrl,...extras});toast("Agregado","success");}
   saveProducts(); closeModal(); renderAdminProducts(); populateInventorySelect(); renderShop();
