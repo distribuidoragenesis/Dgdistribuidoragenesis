@@ -420,6 +420,7 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
   /* Filtros - 100% de ancho para fácil toque */
   .filters-bar { flex-direction: column; align-items: stretch; padding: 1rem; gap: 0.8rem; }
   .filters-bar input, .filters-bar select { width: 100%; min-width: 0; padding: 0.9rem; }
+  .shop-price-btn { align-self: flex-start; }
   #productCount { text-align: center; padding-top: 0.5rem; }
 
   /* Grid de Productos: Forzar 2 columnas simétricas en celular */
@@ -503,7 +504,7 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
     <select id="filterCategory" onchange="currentPage=1;renderShop()">
       <option value="">Todas las categorías</option>
     </select>
-    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;align-self:flex-start">
       <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);white-space:nowrap">Vista:</span>
       <button class="shop-price-btn active" id="btnPrecioPublico" onclick="setPrecioTipo('')">🛒 Público</button>
       <button class="shop-price-btn" id="btnPrecioMayorista" onclick="setPrecioTipo('mayorista')">🏭 Mayoristas</button>
@@ -946,16 +947,17 @@ function renderShop(){
     grid.innerHTML="<div style='grid-column:1/-1;text-align:center;padding:4rem 1rem;color:var(--text-muted);background:var(--surface);border-radius:var(--radius-lg);border:1px dashed var(--border)'><div style='font-size:4rem;margin-bottom:1rem;'>📭</div><p style='font-size:1.1rem;font-weight:500;'>No se encontraron productos</p></div>";
     document.getElementById("paginationBar").innerHTML=""; return;
   }
-  const tipoActual=mayoreoTipo||"publico";
+  const tipoActual=mayoreoTipo||"";
   grid.innerHTML=slice.map(p=>{
     const avail=p.stock>0, img=p.img||p.imgUrl;
     const precio=getPrecioProducto(p);
-    const tieneEspecial=mayoreoMode&&p["precio_"+mayoreoTipo]&&p["precio_"+mayoreoTipo]>0;
+    const tieneEspecial=mayoreoMode&&precio!==p.price;
+    const badgeLabel=mayoreoTipo&&MAYOREO_PRECIOS[mayoreoTipo]?MAYOREO_PRECIOS[mayoreoTipo].icon+" "+MAYOREO_PRECIOS[mayoreoTipo].label:"💵 Mayoristas";
     return "<div class='product-card'>"+
       "<div class='product-img-wrap'>"+
         (img?"<img src='"+img+"' alt='"+p.name+"' loading='lazy' onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex'\"><div class='product-img-placeholder' style='display:none'>🖼<span>Sin imagen</span></div>":"<div class='product-img-placeholder'>🖼<span>Sin imagen</span></div>")+
         "<div class='status-dot "+(avail?"available":"unavailable")+"'></div>"+
-        (tieneEspecial?"<div style='position:absolute;top:0.8rem;left:0.8rem;background:var(--orange);color:#fff;border-radius:100px;padding:0.2rem 0.6rem;font-size:0.7rem;font-weight:700;'>"+MAYOREO_PRECIOS[mayoreoTipo]?.icon||'💵'+" "+MAYOREO_PRECIOS[mayoreoTipo]?.label||''+"</div>":"")+
+        (tieneEspecial?"<div style='position:absolute;top:0.8rem;left:0.8rem;background:var(--orange);color:#fff;border-radius:100px;padding:0.2rem 0.6rem;font-size:0.7rem;font-weight:700;'>"+badgeLabel+"</div>":"")+
       "</div>"+
       "<div class='product-info'>"+
         "<div class='product-name'>"+p.name+"</div>"+
@@ -964,7 +966,7 @@ function renderShop(){
         "<div class='product-footer'>"+
           "<div>"+
             (tieneEspecial?"<div style='font-size:0.8rem;color:var(--text-muted);text-decoration:line-through'>Q"+p.price.toFixed(2)+"</div>":"")+
-            "<div class='product-price'>Q"+precio.toFixed(2)+"</div>"+
+            "<div class='product-price' style='"+(tieneEspecial?"color:var(--orange)":"")+"'>Q"+precio.toFixed(2)+"</div>"+
             "<div class='product-stock-label'>"+(avail?"Stock: "+p.stock:"Agotado")+"</div>"+
           "</div>"+
           "<button class='add-cart-btn' onclick='addToCart("+p.id+")' "+(avail?"":"disabled")+">+ Agregar</button>"+
