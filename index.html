@@ -1262,7 +1262,7 @@ function saveInventoryUpdate(){
 }
 function openAddModal(){
   editingId=null; document.getElementById("modalTitle").textContent="Agregar Producto";
-  ["fSku","fName","fDesc","fPrice","fStock","fImgUrl","fImgData","fPrecioMayoristas","fPrecioMediaDoc","fPrecioDoc","fPrecioFardo"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  ["fSku","fName","fDesc","fPrice","fStock","fImgUrl","fImgData","fPrecioMediaDoc","fPrecioDoc","fPrecioFardo"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
   document.getElementById("imgPreview").style.display="none";
   document.getElementById("precioPreview").textContent="";
   document.getElementById("modalOverlay").classList.add("open");
@@ -1274,8 +1274,7 @@ function openEditModal(id){
   document.getElementById("fDesc").value=p.desc||""; document.getElementById("fPrice").value=p.price||"";
   document.getElementById("fStock").value=p.stock??""; document.getElementById("fImgUrl").value=p.imgUrl||"";
   document.getElementById("fImgData").value=p.img||"";
-  // Cargar precio mayoristas si existe
-  document.getElementById("fPrecioMayoristas").value=(p.precio_mayoristas||p.precio_uds)>0?(p.precio_mayoristas||p.precio_uds):"";
+  // Cargar precios mayoristas
   document.getElementById("fPrecioMediaDoc").value=p.precio_media_doc>0?p.precio_media_doc:"";
   document.getElementById("fPrecioDoc").value=p.precio_doc>0?p.precio_doc:"";
   document.getElementById("fPrecioFardo").value=p.precio_fardo>0?p.precio_fardo:"";
@@ -1320,11 +1319,10 @@ function saveProduct(){
   const stock=parseInt(document.getElementById("fStock").value), imgUrl=document.getElementById("fImgUrl").value.trim();
   const img=document.getElementById("fImgData").value;
   if(!name||isNaN(price)){toast("Nombre y precio requeridos","error");return;}
-  const precio_mayoristas=parsePrecioInput(document.getElementById("fPrecioMayoristas").value,price);
   const precio_media_doc=parsePrecioInput(document.getElementById("fPrecioMediaDoc").value,price);
   const precio_doc=parsePrecioInput(document.getElementById("fPrecioDoc").value,price);
   const precio_fardo=parsePrecioInput(document.getElementById("fPrecioFardo").value,price);
-  const extras={precio_mayoristas,precio_media_doc,precio_doc,precio_fardo};
+  const extras={precio_media_doc,precio_doc,precio_fardo};
   if(editingId){const p=products.find(x=>x.id===editingId);if(p)Object.assign(p,{sku,name,desc,price,stock:isNaN(stock)?p.stock:stock,img,imgUrl,...extras});toast("Actualizado","success");}
   else{products.push({id:nextId(),sku,name,desc,price,stock:isNaN(stock)?0:stock,img,imgUrl,...extras});toast("Agregado","success");}
   saveProducts(); closeModal(); renderAdminProducts(); populateInventorySelect(); renderShop();
