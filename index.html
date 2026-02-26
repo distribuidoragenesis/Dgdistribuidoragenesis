@@ -870,8 +870,6 @@ function init(){
     window._fb.watchProducts(arr=>{
       products=arr;
       localStorage.setItem("lx_products",JSON.stringify(arr));
-      const catSel=document.getElementById("filterCategory");
-      if(catSel){ const prev=catSel.value; catSel.innerHTML="<option value=''>Todas las categorías</option>"; const cats=[...new Set(arr.map(p=>(p.desc||"").replace(/Categor[ií]a:/i,"").trim()).filter(Boolean))].sort(); cats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;catSel.appendChild(o);}); catSel.value=prev; }
       renderShop();
       if(loggedIn) renderAdminProducts();
     });
@@ -944,18 +942,29 @@ function showPage(name){
   window.scrollTo({top:0, behavior: 'smooth'});
 }
 
+function populateCategorySelect(){
+  const catSel=document.getElementById("filterCategory");
+  if(!catSel) return;
+  const current=catSel.value;
+  const cats=[...new Set(products.map(p=>{
+    if(p.categoria&&p.categoria.trim()) return p.categoria.trim();
+    const m=(p.desc||"").match(/categor[íi]a:\s*(.+)/i);
+    return m?m[1].trim():"";
+  }).filter(Boolean))].sort();
+  catSel.innerHTML="<option value=''>Todas las categorías</option>";
+  cats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;catSel.appendChild(o);});
+  if(current) catSel.value=current;
+}
+
 function renderShop(){
   const grid=document.getElementById("productsGrid");
   const search=(document.getElementById("searchInput")?.value||"").toLowerCase().trim();
+  populateCategorySelect();
   const cat=document.getElementById("filterCategory")?.value||"";
-  const catSel=document.getElementById("filterCategory");
-  if(catSel&&catSel.options.length<=1){
-    const cats=[...new Set(products.map(p=>(p.desc||"").replace(/Categor[ií]a:/i,"").trim()).filter(Boolean))].sort();
-    cats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;catSel.appendChild(o);});
-  }
   let filtered=products.filter(p=>{
     const ms=!search||p.name.toLowerCase().includes(search)||(p.sku||"").toLowerCase().includes(search);
-    const mc=!cat||(p.desc||"").includes(cat);
+    const pCat=p.categoria&&p.categoria.trim()?p.categoria.trim():(()=>{const m=(p.desc||"").match(/categor[íi]a:\s*(.+)/i);return m?m[1].trim():"";})();
+    const mc=!cat||pCat===cat;
     return ms&&mc;
   });
   const total=filtered.length, pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
