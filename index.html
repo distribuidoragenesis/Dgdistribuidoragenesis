@@ -1585,9 +1585,9 @@ function shareQuoteWhatsApp(){
 // ── EXPORTAR / IMPORTAR INVENTARIO ──────────────────────────────
 function exportInventoryCSV(){
   if(!products.length){toast("No hay productos para exportar","error");return;}
-  var headers=["id","sku","nombre","precio","stock","descripcion","imgUrl"];
+  var headers=["id","sku","nombre","precio","stock","descripcion","imgUrl","Categoría"];
   var rows=products.map(function(p){
-    return [p.id,fCSV(p.sku||""),fCSV(p.name||""),p.price||0,p.stock||0,fCSV(p.desc||""),fCSV(p.imgUrl||"")].join(",");
+    return [p.id,fCSV(p.sku||""),fCSV(p.name||""),p.price||0,p.stock||0,fCSV(p.desc||""),fCSV(p.imgUrl||""),fCSV(p.categoria||"")].join(",");
   });
   var csv="\uFEFF"+headers.join(",")+"\n"+rows.join("\n");
   var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
@@ -1614,7 +1614,7 @@ function importInventoryCSV(e){
       if(lines.length<2){toast("Archivo vacio o sin datos","error");return;}
       var header=parseCSVRow(lines[0]).map(function(h){return h.toLowerCase().trim();});
       function gi(keys){for(var k=0;k<keys.length;k++){var i=header.indexOf(keys[k]);if(i>=0)return i;}return -1;}
-      var idx={id:header.indexOf("id"),sku:header.indexOf("sku"),name:gi(["nombre","name"]),price:gi(["precio","price"]),stock:header.indexOf("stock"),desc:gi(["descripcion","desc"]),imgUrl:gi(["imgurl","img_url","imagen"])};
+      var idx={id:header.indexOf("id"),sku:gi(["sku","clave"]),name:gi(["nombre","name"]),price:gi(["precio","price"]),stock:header.indexOf("stock"),desc:gi(["descripcion","desc"]),imgUrl:gi(["imgurl","img_url","imagen"]),categoria:gi(["categoria","categoría","category"])};
       if(idx.name<0||idx.price<0){toast("El CSV necesita columnas: nombre y precio","error");return;}
       var added=0,updated=0;
       for(var i=1;i<lines.length;i++){
@@ -1626,10 +1626,11 @@ function importInventoryCSV(e){
         var sku=idx.sku>=0?cols[idx.sku]||"":"";
         var desc=idx.desc>=0?cols[idx.desc]||"":"";
         var imgUrl=idx.imgUrl>=0?cols[idx.imgUrl]||"":"";
+        var categoria=idx.categoria>=0?cols[idx.categoria]||"":"";
         var eid=idx.id>=0?parseInt(cols[idx.id]):NaN;
         var ex=!isNaN(eid)?products.find(function(p){return p.id===eid;}):products.find(function(p){return p.name.toLowerCase()===name.toLowerCase();});
-        if(ex){Object.assign(ex,{sku:sku,name:name,price:price,stock:stock,desc:desc,imgUrl:imgUrl});updated++;}
-        else{products.push({id:nextId(),sku:sku,name:name,price:price,stock:stock,desc:desc,img:"",imgUrl:imgUrl});added++;}
+        if(ex){Object.assign(ex,{sku:sku,name:name,price:price,stock:stock,desc:desc,imgUrl:imgUrl,categoria:categoria});updated++;}
+        else{products.push({id:nextId(),sku:sku,name:name,price:price,stock:stock,desc:desc,img:"",imgUrl:imgUrl,categoria:categoria});added++;}
       }
       saveProducts();renderAdminProducts();populateInventorySelect();renderShop();
       toast("Importado: "+added+" nuevos, "+updated+" actualizados","success");
