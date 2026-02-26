@@ -506,7 +506,9 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
     <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center">
       <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);white-space:nowrap">Vista:</span>
       <button id="shopBtnPublico" class="shop-price-btn active" onclick="setMayoreoTipo('publico')">🛒 Público</button>
-      <button id="shopBtnMayoristas" class="shop-price-btn" onclick="setMayoreoTipo('mayoristas')">🏪 Mayoristas</button>
+      <button id="shopBtnMedia_doc" class="shop-price-btn" onclick="setMayoreoTipo('media_doc')">💵 ½ DOC</button>
+      <button id="shopBtnDoc" class="shop-price-btn" onclick="setMayoreoTipo('doc')">💵 DOC</button>
+      <button id="shopBtnFardo" class="shop-price-btn" onclick="setMayoreoTipo('fardo')">🎁 FARDO</button>
     </div>
     <span id="productCount"></span>
   </div>
@@ -789,17 +791,20 @@ let editingId=null, loggedIn=false, currentPage=1;
 const PAGE_SIZE=24;
 let storeSettings={name:"DG DISTRIBUIDORA GENESIS",desc:"Los mejores productos al mejor precio",logo:"",waNumber:"",credentials:"distribuidora:genesis2024",mayoreoConfig:null,shippingZones:{},defaultShipping:25,freeShippingAt:300};
 let mayoreoMode=false, mayoreoTipo="";
-// Tipos de precio: publico y mayoristas
+// Tipos de precio
 const PRECIO_TIPOS={
-  publico:{label:"Público",icon:"🛒"},
-  mayoristas:{label:"Mayoristas",icon:"🏪"}
+  publico:   {label:"Público",  icon:"🛒"},
+  media_doc: {label:"½ DOC",   icon:"💵"},
+  doc:       {label:"DOC",      icon:"💵"},
+  fardo:     {label:"FARDO",    icon:"🎁"}
 };
 
 // Obtiene el precio del producto según el tipo seleccionado
 function getPrecioProducto(p){
   if(!mayoreoMode||mayoreoTipo==="publico"||!mayoreoTipo) return p.price;
-  const precioEspecial=p.precio_mayoristas||p.precio_uds;
-  if(precioEspecial&&precioEspecial>0) return precioEspecial;
+  if(mayoreoTipo==="media_doc"&&p.precio_media_doc>0) return p.precio_media_doc;
+  if(mayoreoTipo==="doc"&&p.precio_doc>0) return p.precio_doc;
+  if(mayoreoTipo==="fardo"&&p.precio_fardo>0) return p.precio_fardo;
   return p.price;
 }
 
@@ -1010,7 +1015,7 @@ function setMayoreoTipo(tipo){
   mayoreoTipo=tipo; mayoreoMode=tipo!=="publico"&&tipo!=="";
   const label=PRECIO_TIPOS[tipo||"publico"]?.label||"Público";
   // Actualizar botones del shop
-  ["publico","mayoristas"].forEach(t=>{
+  ["publico","media_doc","doc","fardo"].forEach(t=>{
     const btn=document.getElementById("shopBtn"+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn) btn.className="shop-price-btn"+(tipo===t?" active":"");
   });
