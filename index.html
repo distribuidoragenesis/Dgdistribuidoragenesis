@@ -258,6 +258,7 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
 .product-sku { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 .product-desc { font-size: 0.85rem; color: var(--text-muted); flex: 1; margin-top: 0.3rem; line-height: 1.4; }
 .product-footer { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 1rem; gap: 0.5rem; }
+.product-card-actions { display: flex; flex-direction: column; gap: 0.5rem; }
 .product-price { font-size: 1.3rem; font-weight: 800; color: var(--dark); font-family: "Plus Jakarta Sans", sans-serif; }
 .product-stock-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
 .add-cart-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 0.7rem 1.2rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; font-family: "Inter"; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25); flex-shrink: 0; }
@@ -265,32 +266,34 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
 .add-cart-btn:active { transform: scale(0.95); }
 .add-cart-btn:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* Share button overlay */
 .product-card { position: relative; }
-.share-overlay-btn {
-  position: absolute;
-  inset: 0;
+.product-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.share-product-btn {
   width: 100%;
-  height: 100%;
   background: transparent;
-  border: none;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
   cursor: pointer;
-  z-index: 1;
-  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: "Inter", sans-serif;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
 }
-.share-overlay-btn:focus { outline: none; }
-.product-card .product-info,
-.product-card .product-img-wrap,
-.product-card .add-cart-btn,
-.product-card .qty-btn,
-.product-card .status-dot {
-  position: relative;
-  z-index: 2;
-}
-.product-card .add-cart-btn {
-  position: relative;
-  z-index: 3;
-}
+.share-product-btn:hover { background: var(--accent); color: #fff; }
+.share-product-btn:active { opacity: 0.7; }
+.share-product-btn:focus { outline: none; }
 /* Share toast popup */
 .share-popup {
   position: fixed;
@@ -1094,7 +1097,7 @@ function renderShop(){
     const precio=getPrecioProducto(p);
     const tieneEspecial=mayoreoMode&&p["precio_"+mayoreoTipo]&&p["precio_"+mayoreoTipo]>0;
     return "<div class='product-card'>"+
-      "<button class='share-overlay-btn' onclick='shareProduct("+p.id+",event)' title='Compartir producto'></button>"+
+
       "<div class='product-img-wrap'>"+
         (img?"<img src='"+img+"' alt='"+p.name+"' loading='lazy' onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex'\"><div class='product-img-placeholder' style='display:none'>🖼<span>Sin imagen</span></div>":"<div class='product-img-placeholder'>🖼<span>Sin imagen</span></div>")+
         "<div class='status-dot "+(avail?"available":"unavailable")+"'></div>"+
@@ -1110,7 +1113,10 @@ function renderShop(){
             "<div class='product-price'>Q"+precio.toFixed(2)+"</div>"+
             "<div class='product-stock-label'>"+(avail?"Stock: "+p.stock:"Agotado")+"</div>"+
           "</div>"+
-          "<button class='add-cart-btn' onclick='addToCart("+p.id+")' "+(avail?"":"disabled")+">+ Agregar</button>"+
+          "<div class='product-card-actions'>"+
+            "<button class='add-cart-btn' onclick='addToCart("+p.id+")' "+(avail?"":"disabled")+">+ Agregar</button>"+
+            "<button class='share-product-btn' onclick='shareProduct("+p.id+",event)' title='Compartir'>🔗 Compartir</button>"+
+          "</div>"+
         "</div>"+
       "</div>"+
     "</div>";
