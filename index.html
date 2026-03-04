@@ -265,6 +265,56 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
 .add-cart-btn:active { transform: scale(0.95); }
 .add-cart-btn:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* Share button overlay */
+.product-card { position: relative; }
+.share-overlay-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+  border-radius: var(--radius-lg);
+}
+.share-overlay-btn:focus { outline: none; }
+.product-card .product-info,
+.product-card .product-img-wrap,
+.product-card .add-cart-btn,
+.product-card .qty-btn,
+.product-card .status-dot {
+  position: relative;
+  z-index: 2;
+}
+.product-card .add-cart-btn {
+  position: relative;
+  z-index: 3;
+}
+/* Share toast popup */
+.share-popup {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--dark);
+  color: #fff;
+  padding: 0.7rem 1.4rem;
+  border-radius: 100px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 9999;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.share-popup.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* Pagination */
 .pagination-bar { display: flex; gap: 0.5rem; justify-content: center; margin-top: 2.5rem; flex-wrap: wrap; }
 .pg-btn { padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; color: var(--dark); box-shadow: var(--shadow-sm); }
@@ -1044,6 +1094,7 @@ function renderShop(){
     const precio=getPrecioProducto(p);
     const tieneEspecial=mayoreoMode&&p["precio_"+mayoreoTipo]&&p["precio_"+mayoreoTipo]>0;
     return "<div class='product-card'>"+
+      "<button class='share-overlay-btn' onclick='shareProduct("+p.id+",event)' title='Compartir producto'></button>"+
       "<div class='product-img-wrap'>"+
         (img?"<img src='"+img+"' alt='"+p.name+"' loading='lazy' onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex'\"><div class='product-img-placeholder' style='display:none'>🖼<span>Sin imagen</span></div>":"<div class='product-img-placeholder'>🖼<span>Sin imagen</span></div>")+
         "<div class='status-dot "+(avail?"available":"unavailable")+"'></div>"+
@@ -1730,6 +1781,36 @@ function parseCSVRow(line){
 
 
 let _toastTimer;
+let _sharePopupTimer;
+
+function shareProduct(id, event) {
+  event.stopPropagation();
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  const url = window.location.href.split('?')[0] + '?producto=' + encodeURIComponent(p.name);
+  const shareData = {
+    title: p.name,
+    text: '¡Mira este producto! ' + p.name + ' - Q' + (p.price||0).toFixed(2),
+    url: url
+  };
+  const showSharePopup = (msg) => {
+    const popup = document.getElementById('sharePopup');
+    if (!popup) return;
+    popup.textContent = msg;
+    popup.classList.add('show');
+    clearTimeout(_sharePopupTimer);
+    _sharePopupTimer = setTimeout(() => popup.classList.remove('show'), 2500);
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showSharePopup('🔗 Enlace copiado al portapapeles'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showSharePopup('🔗 Enlace copiado al portapapeles');
+  }
+}
 
 // ── MÉTODOS DE PAGO ──────────────────────────────────────────────
 function getPaymentMethods(){
@@ -1805,5 +1886,6 @@ function toast(msg,type){
 
 // Init manejado por el módulo Firebase arriba
 </script>
+<div id="sharePopup" class="share-popup"></div>
 </body>
 </html>
