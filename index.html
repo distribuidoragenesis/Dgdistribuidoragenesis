@@ -230,11 +230,13 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
 .section-sub { color: var(--text-muted); margin-bottom: 2rem; font-size: clamp(0.9rem, 3vw, 1rem); }
 
 /* Hero Section */
-.hero { background: var(--gradient-primary); border-radius: var(--radius-xl); padding: 4rem 2rem; margin-bottom: 2.5rem; text-align: center; color: #fff; position: relative; overflow: hidden; box-shadow: var(--shadow-glow); }
+.hero { background: var(--gradient-primary); border-radius: var(--radius-xl); padding: 2rem 2rem 3rem; margin-bottom: 2.5rem; text-align: center; color: #fff; position: relative; overflow: hidden; box-shadow: var(--shadow-glow); }
 .hero::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at top right, rgba(255,255,255,0.2) 0%, transparent 60%); pointer-events: none; }
-.hero h1 { font-size: clamp(2.2rem, 6vw, 3.5rem); line-height: 1.1; margin-bottom: 1rem; font-weight: 800; letter-spacing: -1px; }
+.hero-logo-wrap { position: relative; z-index: 2; display: flex; justify-content: center; margin-bottom: 0.5rem; margin-top: -0.5rem; }
+.hero-logo-wrap img { width: 110px; height: 110px; object-fit: contain; border-radius: 50%; background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); padding: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); display: none; }
+.hero h1 { font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.1; margin-top: 0.5rem; margin-bottom: 1rem; font-weight: 800; letter-spacing: -1px; position: relative; z-index: 2; }
 .hero h1 span { color: #fde047; text-shadow: 0 2px 10px rgba(253, 224, 71, 0.3); }
-.hero p { opacity: 0.95; font-size: clamp(1rem, 3vw, 1.2rem); max-width: 500px; margin: 0 auto; font-weight: 500; }
+.hero p { opacity: 0.95; font-size: clamp(1rem, 3vw, 1.2rem); max-width: 500px; margin: 0 auto; font-weight: 500; position: relative; z-index: 2; }
 
 /* Filters */
 .filters-bar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; background: var(--surface); padding: 0.8rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
@@ -559,6 +561,9 @@ h1, h2, h3, h4, .section-title, .nav-logo { font-family: "Plus Jakarta Sans", sa
 
 <div class="page active" id="page-shop">
   <div class="hero">
+    <div class="hero-logo-wrap">
+      <img id="heroLogo" src="" alt="Logo">
+    </div>
     <h1 id="heroTitle">Bienvenido a<br><span>DG DISTRIBUIDORA GENESIS</span></h1>
     <p id="heroSubtitle">Los mejores productos al mejor precio</p>
   </div>
@@ -1021,6 +1026,12 @@ function applyStoreSettings(){
   document.getElementById("storeNameEl").innerHTML=s.name+"";
   const logoEl=document.getElementById("storeLogo");
   if(s.logo){logoEl.src=s.logo;logoEl.style.display="block";}else{logoEl.style.display="none";}
+  // Logo superpuesto en el hero
+  const heroLogoImg=document.getElementById("heroLogo");
+  if(heroLogoImg){
+    if(s.logo){heroLogoImg.src=s.logo;heroLogoImg.style.display="block";}
+    else{heroLogoImg.style.display="none";}
+  }
   const si=id=>document.getElementById(id);
   if(si("settingName"))si("settingName").value=s.name||"";
   if(si("settingDesc"))si("settingDesc").value=s.desc||"";
@@ -1547,9 +1558,40 @@ function saveProduct(){
   // Precio mayoristas general = docena (para compatibilidad con getPrecioProducto)
   const precio_mayoristas=precio_docena||precio_media_docena||precio_fardo||0;
   const extras={precio_mayoristas,precio_media_docena,precio_docena,precio_fardo,precio_oferta};
-  if(editingId){const p=products.find(x=>x.id===editingId);if(p)Object.assign(p,{sku,name,desc,categoria,price,stock:isNaN(stock)?p.stock:stock,img,imgUrl,...extras});toast("Actualizado","success");}
-  else{products.push({id:nextId(),sku,name,desc,categoria,price,stock:isNaN(stock)?0:stock,img,imgUrl,...extras});toast("Agregado","success");}
-  sortProductsAZ(); saveProducts(); closeModal(); renderAdminProducts(); populateInventorySelect(); renderShop();
+  let productObj;
+  if(editingId){
+    const p=products.find(x=>x.id===editingId);
+    if(!p) return;
+    Object.assign(p,{sku,name,desc,categoria,price,stock:isNaN(stock)?p.stock:stock,imgUrl,...extras});
+    productObj=p;
+  } else {
+    productObj={id:nextId(),sku,name,desc,categoria,price,stock:isNaN(stock)?0:stock,img:"",imgUrl,...extras};
+    products.push(productObj);
+  }
+
+  const btnSave=document.querySelector(".btn-save[onclick='saveProduct()']");
+  const finalize=(label)=>{
+    sortProductsAZ();
+    saveProducts();
+    if(btnSave){btnSave.disabled=false;btnSave.textContent="Guardar Producto";}
+    toast(label,"success");
+    closeModal(); renderAdminProducts(); populateInventorySelect(); renderShop();
+  };
+
+  if(img && img.startsWith("data:")){
+    if(btnSave){btnSave.disabled=true;btnSave.textContent="Subiendo imagen...";}
+    uploadToImgBB(img).then(url=>{
+      productObj.imgUrl=url;
+      productObj.img="";
+      finalize("✅ Guardado con imagen");
+    }).catch(err=>{
+      console.error("ImgBB error:",err);
+      if(btnSave){btnSave.disabled=false;btnSave.textContent="Guardar Producto";}
+      toast("⚠️ Error al subir imagen: "+err.message,"error");
+    });
+  } else {
+    finalize(editingId?"✅ Actualizado":"✅ Agregado");
+  }
 }
 function sortProductsAZ(){
   products.sort(function(a,b){return(a.name||"").toLowerCase().localeCompare((b.name||"").toLowerCase(),"es");});
@@ -1568,19 +1610,35 @@ function deleteAllInventory(){
   renderShop();
   toast("Inventario eliminado","success");
 }
+const IMGBB_KEY="cab7485f68ccb7e8e91033d8dda1ad88";
+
 function previewImg(input){
   const file=input.files[0]; if(!file)return;
+  const btnSave=document.querySelector(".btn-save[onclick='saveProduct()']");
+  if(btnSave){btnSave.disabled=true;btnSave.textContent="Cargando imagen...";}
   const reader=new FileReader(); reader.onload=e=>{
     const img=new Image(); img.onload=()=>{
-      const canvas=document.createElement("canvas"), max=600;
+      const canvas=document.createElement("canvas"), max=800;
       let w=img.width, h=img.height;
       if(w>max){h=h*(max/w);w=max;} if(h>max){w=w*(max/h);h=max;}
       canvas.width=w; canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h);
-      const data=canvas.toDataURL("image/jpeg",0.75);
+      const data=canvas.toDataURL("image/jpeg",0.8);
       document.getElementById("fImgData").value=data;
       const prev=document.getElementById("imgPreview"); prev.src=data; prev.style.display="block";
+      if(btnSave){btnSave.disabled=false;btnSave.textContent="Guardar Producto";}
     }; img.src=e.target.result;
   }; reader.readAsDataURL(file);
+}
+
+async function uploadToImgBB(base64data){
+  const base64=base64data.split(",")[1];
+  const formData=new FormData();
+  formData.append("key", IMGBB_KEY);
+  formData.append("image", base64);
+  const res=await fetch("https://api.imgbb.com/1/upload", {method:"POST", body:formData});
+  const json=await res.json();
+  if(!json.success) throw new Error("ImgBB error: "+json.error?.message);
+  return json.data.url;
 }
 function previewUrl(input){const prev=document.getElementById("imgPreview");if(input.value){prev.src=input.value;prev.style.display="block";}else prev.style.display="none";}
 
