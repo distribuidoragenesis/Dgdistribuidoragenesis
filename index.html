@@ -176,6 +176,53 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => window._appInit && window._appInit(), 300);
   }
 });
+
+// TIMEOUT DE SEGURIDAD: si Firebase no responde en 15 seg, arrancar en modo local
+setTimeout(() => {
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay && overlay.classList.contains("show")) {
+    console.warn("Timeout Firebase — arrancando en modo local");
+    syncStatus(false, "local");
+    window._appInit && window._appInit();
+  }
+}, 15000);
+
+// RECONEXION AUTOMATICA: cada 12 seg reintenta si sigue en local
+setInterval(() => {
+  if (!fbReady) return;
+  const lbl = document.getElementById("syncLabel");
+  if (!lbl || lbl.textContent === "online") return;
+  Promise.all([
+    get(ref(db, "products")),
+    get(ref(db, "orders")),
+    get(ref(db, "settings"))
+  ]).then(([pSnap, oSnap, sSnap]) => {
+    syncStatus(true, "online");
+    if (pSnap.val()) {
+      window._fbInitProducts = Object.entries(pSnap.val()).map(([k,v])=>({_key:k,...v}));
+      if(typeof products !== "undefined") {
+        products = window._fbInitProducts;
+        if(typeof sortProductsAZ === "function") sortProductsAZ();
+        localStorage.setItem("lx_products", JSON.stringify(products));
+        if(typeof renderShop === "function") renderShop();
+      }
+    }
+    if (oSnap.val()) {
+      window._fbInitOrders = Object.entries(oSnap.val()).map(([k,v])=>({_key:k,...v}));
+      if(typeof orders !== "undefined") {
+        orders = window._fbInitOrders;
+        localStorage.setItem("lx_orders", JSON.stringify(orders));
+      }
+    }
+    if (sSnap.val()) {
+      if(typeof storeSettings !== "undefined") {
+        Object.assign(storeSettings, sSnap.val());
+        localStorage.setItem("lx_settings", JSON.stringify(storeSettings));
+        if(typeof applyStoreSettings === "function") applyStoreSettings();
+      }
+    }
+  }).catch(() => {});
+}, 12000);
 </script>
 
 <style>
